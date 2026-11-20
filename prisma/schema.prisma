@@ -1,0 +1,29 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Room {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String
+  image       String
+  items       Item[]
+}
+
+model Item {
+  id           Int      @id @default(autoincrement())
+  name         String
+  descriptions String   // Теперь тут хранится массив текстов в виде строки
+  roomId       Int
+  room         Room     @relation(fields: [roomId], references: [id])
+}
+
+model Dialogue {
+  id          Int      @id @default(autoincrement())
+  trigger     String
+  text        String
+}
