@@ -3,6 +3,9 @@ import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3'
 import 'dotenv/config'
 import ComicGame from './ComicGame'
 
+// Эта строчка говорит Next.js: "Не пытайся кэшировать эту страницу"
+export const instant = false;
+
 const adapter = new PrismaBetterSqlite3({
   url: process.env.DATABASE_URL || 'file:./prisma/dev.db',
 })

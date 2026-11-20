@@ -26,18 +26,49 @@ export default function ComicGame({ rooms, dialogues }: { rooms: Room[], dialogu
   const [inventory, setInventory] = useState<string[]>([]);
   const [clickCounters, setClickCounters] = useState<Record<number, number>>({});
   const [activeMenu, setActiveMenu] = useState<{ type: 'interact' | 'inventory' | 'travel', align: 'left' | 'right' } | null>(null);
+  
+  // Храним предмет, который сейчас читаем
+  const [activeItem, setActiveItem] = useState<Item | null>(null);
 
   useEffect(() => {
     setPosition({ x: 50, y: 80 });
     setActiveMenu(null);
+    setActiveItem(null); // Сбрасываем активный предмет при смене комнаты
   }, [currentRoom]);
 
   const addLog = (text: string) => setLog(text);
+
+  // Функция листания монолога
+  const handleInteract = (item: Item) => {
+    // Если кликнули на новый предмет, делаем его активным
+    setActiveItem(item);
+    
+    const descriptionsArray = item.descriptions.split('|');
+    const currentCount = clickCounters[item.id] || 0;
+    const textToShow = descriptionsArray[currentCount % descriptionsArray.length];
+    
+    addLog(textToShow);
+    
+    setClickCounters(prev => ({
+      ...prev,
+      [item.id]: currentCount + 1
+    }));
+
+    // Логика добавления в инвентарь (сработает только 1 раз)
+    const takeableItems = ["Очки-бинокуляры", "Открытка", "Носки", "Аптечка"];
+    if (takeableItems.includes(item.name) && !inventory.includes(item.name)) {
+      setInventory(prev => [...prev, item.name]);
+      if (currentCount === 0) {
+        setLog(prevLog => prevLog + `\n> Шпиндель: Теперь ${item.name} у меня в кармане.`);
+      }
+    }
+  };
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
 
+      // Движение на WASD
       const step = 5;
       setPosition(prev => {
         let newX = prev.x;
@@ -53,11 +84,16 @@ export default function ComicGame({ rooms, dialogues }: { rooms: Room[], dialogu
 
         return { x: newX, y: newY };
       });
+
+      // Листание монолога на клавишу E (или русскую У)
+      if ((e.key === 'e' || e.key === 'E' || e.key === 'у' || e.key === 'У') && activeItem) {
+        handleInteract(activeItem); // Листаем активный предмет
+      }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  }, [activeItem, clickCounters, inventory]); // Важно: зависимости для обновления стейта
 
   const handleMove = (roomName: string) => {
     const nextRoom = rooms.find(r => r.name === roomName);
@@ -65,31 +101,6 @@ export default function ComicGame({ rooms, dialogues }: { rooms: Room[], dialogu
       setCurrentRoom(nextRoom);
       addLog(`> Шпиндель: Перехожу в ${nextRoom.name}.`);
     }
-  };
-
-  // Обработка клика по предмету
-  const handleInteract = (item: Item) => {
-    const descriptionsArray = item.descriptions.split('|');
-    const currentCount = clickCounters[item.id] || 0;
-    const textToShow = descriptionsArray[currentCount % descriptionsArray.length];
-    
-    addLog(textToShow);
-    
-    setClickCounters(prev => ({
-      ...prev,
-      [item.id]: currentCount + 1
-    }));
-
-    const takeableItems = ["Очки-бинокуляры", "Открытка", "Носки", "Аптечка"];
-    if (takeableItems.includes(item.name) && !inventory.includes(item.name)) {
-      setInventory(prev => [...prev, item.name]);
-      if (currentCount === 0) {
-        // Добавляем в конец текущего лога (можно просто перезаписать или дописать)
-        setLog(prevLog => prevLog + `\n> Шпиндель: Теперь ${item.name} у меня в кармане.`);
-      }
-    }
-    
-    setActiveMenu(null);
   };
 
   const toggleMenu = (type: 'interact' | 'inventory' | 'travel') => {
@@ -145,8 +156,8 @@ export default function ComicGame({ rooms, dialogues }: { rooms: Room[], dialogu
                 {currentRoom.items.length > 0 ? currentRoom.items.map(item => (
                   <button 
                     key={item.id} 
-                    onClick={() => handleInteract(item)}
-                    className="text-left px-2 py-1 border border-gray-600 hover:bg-gray-800 text-sm"
+                    onClick={() => { handleInteract(item); setActiveMenu(null); }} // При клике сразу листаем
+                    className={`text-left px-2 py-1 border text-sm transition-colors ${activeItem?.id === item.id ? 'bg-gray-800 border-green-500 text-green-400' : 'border-gray-600 hover:bg-gray-800'}`}
                   >
                     {item.name}
                   </button>
@@ -210,9 +221,17 @@ export default function ComicGame({ rooms, dialogues }: { rooms: Room[], dialogu
 
       </div>
 
-      {/* Лог */}
-      <div className="w-full max-w-5xl h-48 bg-black border-2 border-white p-4 text-lg overflow-y-auto">
+      {/* Лог и подсказки */}
+      <div className="w-full max-w-5xl h-48 bg-black border-2 border-white p-4 text-lg overflow-y-auto relative">
         <p className="text-white whitespace-pre-wrap">{log}</p>
+        
+        {/* ПОДСКАЗКА ПО УПРАВЛЕНИЮ */}
+        <div className="absolute bottom-2 right-4 text-xs text-gray-500 font-sans uppercase flex gap-4">
+          <span>[WASD] Ходьба</span>
+          <span className={activeItem ? "text-green-400 font-bold" : ""}>
+            [E] {activeItem ? `Листать: ${activeItem.name}` : "Выберите предмет"}
+          </span>
+        </div>
       </div>
       
     </main>
