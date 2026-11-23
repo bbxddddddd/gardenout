@@ -33,14 +33,14 @@ export default function ComicGame({ rooms, dialogues }: { rooms: Room[], dialogu
   useEffect(() => {
     setPosition({ x: 50, y: 80 });
     setActiveMenu(null);
-    setActiveItem(null); // Сбрасываем активный предмет при смене комнаты
+    setActiveItem(null);
   }, [currentRoom]);
 
   const addLog = (text: string) => setLog(text);
 
   // Функция листания монолога
   const handleInteract = (item: Item) => {
-    // Если кликнули на новый предмет, делаем его активным
+
     setActiveItem(item);
     
     const descriptionsArray = item.descriptions.split('|');
@@ -54,7 +54,7 @@ export default function ComicGame({ rooms, dialogues }: { rooms: Room[], dialogu
       [item.id]: currentCount + 1
     }));
 
-    // Логика добавления в инвентарь (сработает только 1 раз)
+    // Логика добавления в инвентарь 
     const takeableItems = ["Очки-бинокуляры", "Открытка", "Носки", "Аптечка"];
     if (takeableItems.includes(item.name) && !inventory.includes(item.name)) {
       setInventory(prev => [...prev, item.name]);
@@ -85,7 +85,7 @@ export default function ComicGame({ rooms, dialogues }: { rooms: Room[], dialogu
         return { x: newX, y: newY };
       });
 
-      // Листание монолога на клавишу E (или русскую У)
+      // Листание монолога на клавишу E
       if ((e.key === 'e' || e.key === 'E' || e.key === 'у' || e.key === 'У') && activeItem) {
         handleInteract(activeItem); // Листаем активный предмет
       }

@@ -66,7 +66,7 @@ async function main() {
     }
   })
 
-  // ОСТАЛЬНЫЕ КОМНАТЫ (пока с текстами-заглушками, чтобы не было ошибок)
+  // ОСТАЛЬНЫЕ КОМНАТЫ 
   await prisma.room.create({ 
     data: { 
       name: "Коридор", 
@@ -125,7 +125,7 @@ async function main() {
     data: [{ trigger: "start", text: "> Шпиндель: Надо осмотреться." }]
   })
 
-  console.log("База обновлена! Все монологи Шпинделя загружены.")
+  console.log("База обновлена!")
 }
 
 main().catch((e) => console.error(e)).finally(async () => await prisma.$disconnect())
