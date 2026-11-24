@@ -12,6 +12,7 @@ async function main() {
   await prisma.dialogue.deleteMany()
   await prisma.item.deleteMany()
   await prisma.room.deleteMany()
+  await prisma.character.deleteMany()
 
   // СПАЛЬНЯ
   await prisma.room.create({
@@ -123,6 +124,10 @@ async function main() {
   // СТАРТОВЫЙ ДИАЛОГ
   await prisma.dialogue.createMany({
     data: [{ trigger: "start", text: "> Шпиндель: Надо осмотреться." }]
+  })
+
+  await prisma.character.create({
+    data: { name: "Шпиндель" }
   })
 
   console.log("База обновлена!")

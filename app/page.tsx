@@ -13,6 +13,7 @@ const prisma = new PrismaClient({ adapter })
 export default async function Home() {
   const rooms = await prisma.room.findMany({ include: { items: true } })
   const dialogues = await prisma.dialogue.findMany()
+  const character = await prisma.character.findFirst() // <-- Получаем героя
   
-  return <ComicGame rooms={rooms} dialogues={dialogues} />
+  return <ComicGame rooms={rooms} dialogues={dialogues} characterName={character?.name || "ГГ"} />
 }
