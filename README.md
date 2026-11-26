@@ -34,3 +34,24 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+# Веб-комикс "Шпиндель" (Homestuck-style)
+
+Интерактивный веб-комикс с исследованием комнат, сбором предметов и монолгами главного героя (Бориса Шпинделя).
+
+## Технологический стек
+*   **Фреймворк:** Next.js (App Router)
+*   **Язык:** TypeScript
+*   **Стили:** Tailwind CSS
+*   **База данных:** SQLite
+*   **ORM:** Prisma
+
+## Ключевые сущности
+*   **Room (Комната):** Локации, по которым перемещается герой.
+*   **Item (Предмет):** Объекты в комнатах (очки, ноутбук, унитаз и т.д.). Содержат вариации текстов.
+*   **Dialogue (Диалог):** Стартовые реплики персонажа.
+
+## Инструкция по запуску
+1. Установите зависимости:
+   ```bash
+   npm install --ignore-scripts

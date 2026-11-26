@@ -1,10 +1,7 @@
 import { PrismaClient } from '@prisma/client'
 import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3'
 import 'dotenv/config'
-import Link from 'next/link'
-import { createRoom, createItem } from './actions'
-
-export const instant = false;
+import { revalidatePath } from 'next/cache'
 
 const adapter = new PrismaBetterSqlite3({
   url: process.env.DATABASE_URL || 'file:./prisma/dev.db',
@@ -12,69 +9,120 @@ const adapter = new PrismaBetterSqlite3({
 const prisma = new PrismaClient({ adapter })
 
 export default async function AdminPage() {
+  // Получаем комнаты вместе с их предметами
   const rooms = await prisma.room.findMany({
     include: { items: true }
   })
 
+  // Функция для создания новой комнаты
+  async function createRoom(formData: FormData) {
+    'use server'
+    const name = formData.get('name') as string
+    const description = formData.get('description') as string
+
+    if (name && description) {
+      await prisma.room.create({
+        data: {
+          name,
+          description,
+          image: '/images/prototype_bedroom.jpg', // Заглушка
+        }
+      })
+      revalidatePath('/admin')
+      revalidatePath('/')
+    }
+  }
+
+  // Функция для создания нового предмета
+  async function createItem(formData: FormData) {
+    'use server'
+    const name = formData.get('name') as string
+    const descriptions = formData.get('descriptions') as string
+    const roomId = Number(formData.get('roomId'))
+
+    if (name && descriptions && roomId) {
+      await prisma.item.create({
+        data: {
+          name,
+          descriptions,
+          roomId
+        }
+      })
+      revalidatePath('/admin')
+      revalidatePath('/')
+    }
+  }
+
   return (
-    <main className="min-h-screen bg-gray-900 text-white font-mono p-8">
-      <div className="max-w-4xl mx-auto">
-        <div className="flex justify-between items-center mb-8 border-b border-gray-700 pb-4">
-          <h1 className="text-3xl font-bold uppercase tracking-widest">Админ-панель</h1>
-          <Link href="/" className="px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded border border-blue-400">
-            Вернуться в игру
-          </Link>
-        </div>
-
-        <div className="mb-8">
-          <h2 className="text-xl mb-4 text-green-400">Список комнат:</h2>
-          <div className="grid gap-4">
-            {rooms.map(room => (
-              <div key={room.id} className="bg-gray-800 border border-gray-600 p-4 rounded">
-                <div className="flex justify-between items-center mb-2">
-                  <h3 className="text-lg font-bold">{room.name}</h3>
-                  <Link href={`/admin/edit-room/${room.id}`} className="text-sm text-yellow-400 hover:underline">
-                    Редактировать
-                  </Link>
-                </div>
-                <p className="text-sm text-gray-400 mb-2">Описание: {room.description}</p>
-                <p className="text-sm text-gray-400 mb-2">Предметов в комнате: {room.items.length}</p>
-              </div>
-            ))}
+    <main className="min-h-screen bg-black text-white p-8 font-mono">
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-3xl">Админ-панель</h1>
+        <a href="/" className="text-green-500 hover:text-green-400">← Вернуться в игру</a>
+      </div>
+      
+      <div className="flex gap-8">
+        
+        {/* ЛЕВАЯ КОЛОНКА: Формы создания */}
+        <div className="w-1/3 flex flex-col gap-8">
+          
+          {/* Форма создания комнаты */}
+          <div className="bg-gray-900 p-6 rounded border border-gray-700">
+            <h2 className="text-xl mb-4 text-green-400">Добавить комнату</h2>
+            <form action={createRoom} className="flex flex-col gap-4">
+              <input name="name" placeholder="Название" className="p-2 bg-black border border-gray-600 text-white" required />
+              <textarea name="description" placeholder="Описание" className="p-2 bg-black border border-gray-600 text-white" required />
+              <button type="submit" className="bg-green-600 p-2 hover:bg-green-700 font-bold">Создать комнату</button>
+            </form>
           </div>
+
+          {/* Форма создания предмета */}
+          <div className="bg-gray-900 p-6 rounded border border-gray-700">
+            <h2 className="text-xl mb-4 text-blue-400">Добавить предмет</h2>
+            <form action={createItem} className="flex flex-col gap-4">
+              <input name="name" placeholder="Название предмета" className="p-2 bg-black border border-gray-600 text-white" required />
+              <textarea name="descriptions" placeholder="Тексты (разделяй вертикальной чертой |)" className="p-2 bg-black border border-gray-600 text-white h-24" required />
+              
+              <select name="roomId" className="p-2 bg-black border border-gray-600 text-white" required>
+                <option value="">Выберите комнату...</option>
+                {rooms.map(room => (
+                  <option key={room.id} value={room.id}>{room.name}</option>
+                ))}
+              </select>
+
+              <button type="submit" className="bg-blue-600 p-2 hover:bg-blue-700 font-bold">Создать предмет</button>
+            </form>
+          </div>
+
         </div>
 
-        {/* Здесь потом добавим формы создания */}
-        <div className="p-4 border border-dashed border-gray-600 rounded text-center text-gray-500">
-          [        {/* Форма создания комнаты */}
-        <div className="mb-8 bg-gray-800 p-4 rounded border border-gray-700">
-          <h2 className="text-xl mb-4 text-green-400">Создать новую комнату</h2>
-          <form action={createRoom} className="flex flex-col gap-3">
-            <input type="text" name="name" placeholder="Название (например, Чердак)" required className="p-2 bg-gray-900 border border-gray-600 rounded text-white" />
-            <input type="text" name="description" placeholder="Описание комнаты" required className="p-2 bg-gray-900 border border-gray-600 rounded text-white" />
-            <input type="text" name="image" placeholder="Путь к картинке (например, /images/attic.jpg)" required className="p-2 bg-gray-900 border border-gray-600 rounded text-white" />
-            <button type="submit" className="px-4 py-2 bg-green-700 hover:bg-green-600 rounded border border-green-500 self-start">Создать комнату</button>
-          </form>
+        {/* ПРАВАЯ КОЛОНКА: Списки */}
+        <div className="w-2/3 bg-gray-900 p-6 rounded border border-gray-700">
+          <h2 className="text-xl mb-4">Список комнат и предметов</h2>
+          <ul className="flex flex-col gap-4">
+            {rooms.map(room => (
+              <li key={room.id} className="border border-gray-700 p-4 rounded bg-black">
+                <strong className="text-green-400 text-lg block mb-2">{room.name}</strong>
+                <p className="text-gray-400 text-sm mb-4">{room.description}</p>
+                
+                <div className="ml-4 border-l-2 border-gray-600 pl-4">
+                  <span className="text-gray-300 text-sm font-bold block mb-2">Предметы в комнате ({room.items.length}):</span>
+                  {room.items.length > 0 ? (
+                    <ul className="text-sm flex flex-col gap-1">
+                      {room.items.map(item => (
+                        <li key={item.id} className="text-blue-300">
+                          • {item.name} <span className="text-gray-500 text-xs">({item.descriptions.split('|').length} вариантов текста)</span>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <span className="text-gray-500 text-sm italic">Нет предметов</span>
+                  )}
+                </div>
+              </li>
+            ))}
+          </ul>
         </div>
 
-        {/* Форма создания предмета */}
-        <div className="bg-gray-800 p-4 rounded border border-gray-700">
-          <h2 className="text-xl mb-4 text-green-400">Создать новый предмет</h2>
-          <form action={createItem} className="flex flex-col gap-3">
-            <input type="text" name="name" placeholder="Название предмета (например, Старый сундук)" required className="p-2 bg-gray-900 border border-gray-600 rounded text-white" />
-            <textarea name="descriptions" placeholder="Текст монолога. Разделяйте вариации знаком |" required className="p-2 bg-gray-900 border border-gray-600 rounded text-white h-24" />
-            
-            <select name="roomId" required className="p-2 bg-gray-900 border border-gray-600 rounded text-white">
-              <option value="">Выберите комнату...</option>
-              {rooms.map(room => (
-                <option key={room.id} value={room.id}>{room.name}</option>
-              ))}
-            </select>
-            
-            <button type="submit" className="px-4 py-2 bg-green-700 hover:bg-green-600 rounded border border-green-500 self-start">Создать предмет</button>
-          </form>
-        </div>]
-        </div>
       </div>
     </main>
   )
