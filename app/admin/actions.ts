@@ -10,7 +10,8 @@ const adapter = new PrismaBetterSqlite3({
 })
 const prisma = new PrismaClient({ adapter })
 
-// Заготовленные картинки: при создании предмету рандомно выдаётся одна из них
+//при создании предмета рандомно выдаётся одна из след картинок, 
+// вот смотрите тут есть пебл, шляпа пугода и блю из юрского периода
 const itemImages = [
   "/images/shtyka1.png",
   "/images/shtyka2.png",

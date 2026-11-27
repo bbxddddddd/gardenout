@@ -3,20 +3,13 @@
 import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 
-// ============================================================
 // ТИПЫ ДАННЫХ
-// ============================================================
-
-// Предмет: у каждого свой id, имя и набор реплик через разделитель "|"
+// Предмет
 type Item = { id: number; name: string; descriptions: string; image: string };
-// Комната: id, название, описание, фоновая картинка и список предметов
+// Комната
 type Room = { id: number; name: string; description: string; image: string; items: Item[] };
-// Реплика диалога: срабатывает по триггеру (например "start")
+// Реплика диалога
 type Dialogue = { id: number; trigger: string; text: string };
-
-// ============================================================
-// КАРТА ИГРЫ
-// ============================================================
 
 // Куда можно уйти из каждой комнаты
 const roomConnections: Record<string, string[]> = {
@@ -29,8 +22,6 @@ const roomConnections: Record<string, string[]> = {
 };
 
 // НАСТРОЙКИ ГЕРОЯ В КОМНАТАХ:
-// x, y — позиция в процентах от размера комнаты,
-// width — ширина спрайта героя в пикселях
 const roomSettings: Record<string, { x: number, y: number, width: number }> = {
   "Спальня": { x: 15, y: 45, width: 70 },
   "Коридор": { x: 10, y: 45, width: 150 },
@@ -41,20 +32,14 @@ const roomSettings: Record<string, { x: number, y: number, width: number }> = {
 };
 
 // НАСТРОЙКИ КАРТИНКИ НА ЭКРАНЕ КОНЦА (down.png)
-// x, y      — позиция центра картинки в процентах от экрана (50/50 = центр)
-// width     — ширина картинки в пикселях
-// height    — высота картинки в пикселях (можно задать отдельно, если не хотите искажения — ставьте равной ширине)
-// opacity   — прозрачность в % (0 = невидима, 100 = полностью непрозрачная)
 const endImageSettings = {
-  x: 50,       // Позиция по горизонтали (в %)
-  y: 17,       // Позиция по вертикали (в %)
-  width: 500,  // Ширина в пикселях
-  height: 250, // Высота в пикселях
-  opacity: 100  // Прозрачность (в %)
+  x: 50,    
+  y: 17,     
+  width: 500,  
+  height: 250, 
+  opacity: 100  
 };
 // НАСТРОЙКИ КАРТИНКИ ПРЕДМЕТА НА СЦЕНЕ
-// x, y    — позиция центра картинки в процентах от сцены (50/50 = центр)
-// width   — ширина картинки в пикселях (высота подстроится пропорционально)
 const itemImageSettings = {
   x: 50,
   y: 50,
@@ -73,36 +58,35 @@ const roomEnterTexts: Record<string, string> = {
   "Туалет": "зона комфорта, но поменьше"
 };
 
-// Кадры анимации «смыва»: прокручиваются по кругу, пока isEscaping = true
+// Кадры анимации «смыва»
 const animationFrames = ["/images/1.png", "/images/2.png", "/images/3.png", "/images/four.png"];
 
-// ============================================================
+
 // ГЛАВНЫЙ КОМПОНЕНТ ИГРЫ
-// ============================================================
-
 export default function ComicGame({ rooms, dialogues, characterName }: { rooms: Room[], dialogues: Dialogue[], characterName: string }) {
-  const [isClient, setIsClient] = useState(false); // Защита от SSR: рендерим игру только в браузере
+  const [isClient, setIsClient] = useState(false); // рендерим игру только в браузере
 
-  const [gameStarted, setGameStarted] = useState(false); // Старт игры пройден?
-  const [loginStep, setLoginStep] = useState<1 | 2>(1);  // Шаг экрана входа: 1 — ввод имени, 2 — «Отказано»
-  const [inputName, setInputName] = useState("");        // То, что игрок напечатал в поле
+  //старт игры и ввод имени
+  const [gameStarted, setGameStarted] = useState(false); 
+  const [loginStep, setLoginStep] = useState<1 | 2>(1);  
+  const [inputName, setInputName] = useState("");        
 
-  // Стартовая комната — спальня, а если её нет, первая попавшаяся
+  // Стартовая комната (спальня)
   const startRoom = rooms.find(r => r.name === "Спальня") || rooms[0];
   const [currentRoom, setCurrentRoom] = useState<Room>(startRoom);
-  // Первая реплика: диалог с триггером "start" или запасной текст
+  // Первая реплика
   const [log, setLog] = useState<string>(dialogues.find(d => d.trigger === "start")?.text || "Игра началась.");
 
-  // Позиция и размер героя берутся из настроек текущей комнаты
+  // координаты и размер героя (прописывается в каждой комнате, ПОТОМУ ЧТО Я КЛЯНУСЬ ОН ПОСТОЯННО КУДА ТО УЛЕТАЕТ ЭТО НЕВОХЗМОЖНО)
   const settings = roomSettings[currentRoom.name] || { x: 50, y: 80, width: 200 };
   const [position, setPosition] = useState({ x: settings.x, y: settings.y });
 
   const [inventory, setInventory] = useState<string[]>([]);              // Подобранные предметы
   const [clickCounters, setClickCounters] = useState<Record<number, number>>({}); // Сколько раз кликнули по каждому предмету
   const [activeMenu, setActiveMenu] = useState<{ type: 'interact' | 'inventory' | 'travel', align: 'left' | 'right' } | null>(null); // Какое меню открыто
-  const [activeItem, setActiveItem] = useState<Item | null>(null);       // Выбранный предмет (для клавиши E)
+  const [activeItem, setActiveItem] = useState<Item | null>(null);       // Выбранный предмет
 
-  const [isTalking, setIsTalking] = useState(false);                     // Герой сейчас «говорит» (меняется спрайт)
+  const [isTalking, setIsTalking] = useState(false);                     // Герой сейчас «говорит» 
   const talkTimerRef = useRef<NodeJS.Timeout | null>(null);              // Таймер, чтобы спрайт закрыл рот через 2.5 сек
 
   const [isEscaping, setIsEscaping] = useState(false);                   // Идёт анимация смыва?
@@ -110,12 +94,14 @@ export default function ComicGame({ rooms, dialogues, characterName }: { rooms: 
 
   const [isGameOver, setIsGameOver] = useState(false);                   // Конец игры?
 
-  // При монтировании включаем клиентский рендер (иначе Next.js ругается на гидратацию)
+  // При монтировании включаем клиентский рендер (иначе Next.js ругается на гидратацию)((ОН НА ВСЁ РУГАЕТСЯ ЕСЛИ ЧЕСТНО))
   useEffect(() => {
     setIsClient(true);
   }, []);
 
-  // Подставляем имя персонажа вместо «Шпиндель» и «ГГ» в любом тексте
+  // подставление имени было вообще не обязательным, но столько раз ИМЕННО ЭТО переделывалось, 
+  // потому что постоянно казалось, что можно всё сделать иначе, 
+  // что в итоге перемудрили настолько, что потом уже не захотелось что-либо менять
   const formatText = (text: string) => {
     return text.replace(/Шпиндель/g, characterName).replace(/> ГГ:/g, `> ${characterName}:`);
   };
@@ -130,7 +116,8 @@ export default function ComicGame({ rooms, dialogues, characterName }: { rooms: 
     setIsEscaping(false);
   }, [currentRoom]);
 
-  // Пока идёт анимация смыва — каждые 110 мс переключаем кадр по кругу
+  // Пока идёт анимация смыва - каждые 110 мс переключаем кадр по кругу 
+  // (я так и не разобралась как гифки вставлять чтобы нормально было зазаза)
   useEffect(() => {
     let interval: NodeJS.Timeout;
     if (isEscaping) {
@@ -153,7 +140,7 @@ export default function ComicGame({ rooms, dialogues, characterName }: { rooms: 
   const handleInteract = (item: Item) => {
     if (isGameOver) return; // После конца игры клики игнорируются
 
-    // Если во время анимации смыва трогают унитаз — это финал
+    // Если во время анимации смыва взаимодействие - конец игры
     if (isEscaping && item.name === "Унитаз") {
       setIsGameOver(true);
       return;
@@ -171,11 +158,11 @@ export default function ComicGame({ rooms, dialogues, characterName }: { rooms: 
       setAnimationFrame(0);
     }
 
-    // Предметы, которые можно забрать в инвентарь
+    // Предметы, которые можно забрать в инвентарь (так и не доделали ни ванную, ни кухню, ничего вообще(аптечи тупа нет))
     const takeableItems = ["Очки-бинокуляры", "Открытка", "Носки", "Аптечка"];
     let finalLog = textToShow;
 
-    // При первом взборе — реплика «предмет в кармане» + основная реплика предмета
+    // При первом взборе - реплика «предмет в кармане» + основная реплика предмета
     if (takeableItems.includes(item.name) && !inventory.includes(item.name)) {
       setInventory(prev => [...prev, item.name]);
       if (currentCount === 0) {
@@ -194,11 +181,13 @@ export default function ComicGame({ rooms, dialogues, characterName }: { rooms: 
       if (!gameStarted) return;
       // Не двигаем героя, пока игрок печатает в поле ввода
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
-
+      
+      //это вообще зачем было не понятно
+      //БРДЫЩ
       const step = 5; // Шаг героя в процентах за одно нажатие
       setPosition(prev => {
         let newX = prev.x, newY = prev.y;
-        // Дублируем латиницу русскими клавишами (ЦФЫВ) и стрелками
+        // Дублируем латиницу русскими клавишами и стрелками
         if (e.key === 'w' || e.key === 'W' || e.key === 'ц' || e.key === 'Ц' || e.key === 'ArrowUp') newY -= step;
         if (e.key === 's' || e.key === 'S' || e.key === 'ы' || e.key === 'Ы' || e.key === 'ArrowDown') newY += step;
         if (e.key === 'a' || e.key === 'A' || e.key === 'ф' || e.key === 'Ф' || e.key === 'ArrowLeft') newX -= step;
@@ -207,9 +196,10 @@ export default function ComicGame({ rooms, dialogues, characterName }: { rooms: 
         return { x: Math.max(0, Math.min(100, newX)), y: Math.max(0, Math.min(100, newY)) };
       });
 
-      // E — то же самое, что клик по выбранному предмету
+      // E - то же самое, что клик по выбранному предмету
       if ((e.key === 'e' || e.key === 'E' || e.key === 'у' || e.key === 'У') && activeItem) {
-        // Во время анимации смыва клавиша E по унитазу включает финал
+        // Во время анимации смыва клавиша E по унитазу включает финал 
+        // указываем это НЕСКОЛЬКО раз, потому что иначе что-то да не сработает
         if (isEscaping && activeItem.name === "Унитаз") {
           setIsGameOver(true);
           return;
@@ -219,7 +209,7 @@ export default function ComicGame({ rooms, dialogues, characterName }: { rooms: 
     };
 
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown); // Чистим слушатель при размонтировании
+    return () => window.removeEventListener('keydown', handleKeyDown); // ТОЖЕ ЧТОБЫ КНОПКИ НЕ СЛОМАЛИСЬ
   }, [activeItem, clickCounters, inventory, gameStarted, characterName, isEscaping, isGameOver]);
 
   // Переход в соседнюю комнату + реплика при входе
@@ -238,9 +228,7 @@ export default function ComicGame({ rooms, dialogues, characterName }: { rooms: 
     return <main className="min-h-screen bg-black" />;
   }
 
-  // ==========================================
-  // БЛОК 1: ЭКРАН ВВОДА ИМЕНИ
-  // ==========================================
+  //ЭКРАН ВВОДА ИМЕНИ
   if (!gameStarted) {
     return (
       <main className="flex flex-col items-center justify-center min-h-screen bg-black text-white font-mono p-4">
@@ -271,16 +259,14 @@ export default function ComicGame({ rooms, dialogues, characterName }: { rooms: 
     );
   }
 
-   // ==========================================
-  // БЛОК 2: ЭКРАН КОНЦА ИГРЫ
-  // ==========================================
+  //ЭКРАН КОНЦА ИГРЫ
   if (isGameOver) {
     return (
       <main className="relative flex flex-col items-center justify-center min-h-screen bg-black text-white font-mono p-4 overflow-hidden">
 
-        {/* Картинка down.png — ЛЕЖИТ ПОВЕРХ ВСЕГО (z-20).
+        {/* Картинка down.png - ЛЕЖИТ ПОВЕРХ ВСЕГО 
             Позиция, размер и прозрачность берутся из endImageSettings в начале файла.
-            pointer-events-none — чтобы картинка не перекрывала клики по кнопке. */}
+            pointer-events-none - чтобы картинка не перекрывала клики по кнопке. */}
         <div 
           className="absolute z-20 pointer-events-none"
           style={{ 
@@ -304,7 +290,7 @@ export default function ComicGame({ rooms, dialogues, characterName }: { rooms: 
           />
         </div>
 
-        {/* Текст и кнопка — теперь ПОД картинкой (z-10) */}
+        {/* Текст и кнопка -ттеперь ПОД картинкой*/}
         <div className="relative z-10 w-full max-w-lg bg-black border-2 border-white p-8 flex flex-col items-center text-center">
           <h1 className="text-3xl font-bold text-red-600 mb-6 uppercase tracking-widest">
             Игра окончена!
@@ -330,10 +316,7 @@ export default function ComicGame({ rooms, dialogues, characterName }: { rooms: 
     );
   }
 
-
-  // ==========================================
-  // БЛОК 3: ОСНОВНАЯ ИГРА
-  // ==========================================
+  //ОСНОВНАЯ ИГРА
   return (
     <main className="flex flex-col items-center justify-center min-h-screen bg-black text-white font-mono p-4">
       
@@ -341,7 +324,7 @@ export default function ComicGame({ rooms, dialogues, characterName }: { rooms: 
       <div className="relative w-full max-w-5xl aspect-video bg-gray-800 rounded border-2 border-gray-600 mb-2 overflow-hidden">
          <Image src={currentRoom.image} alt={currentRoom.name} fill className="object-cover" />
          
-         {/* Анимация смыва закрывает всю сцену, пока идёт */}
+         {/* Анимация смыва закрывает всю сцену, пока идёт, ПОТОМУ ЧТО ГИФКА УЖАСНО ВЫГЛЯДЕЛА НУ */}
          {isEscaping && (
             <div className="absolute inset-0 z-20 w-full h-full">
               <Image 

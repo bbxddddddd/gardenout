@@ -3,7 +3,7 @@ import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3'
 import 'dotenv/config'
 import ComicGame from './ComicGame'
 
-// Разрешаем блокирующий рендер: страница читает базу при каждом открытии
+//страница читает базу при каждом открытии
 export const instant = false
 
 const adapter = new PrismaBetterSqlite3({

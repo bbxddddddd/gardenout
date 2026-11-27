@@ -9,13 +9,13 @@ const adapter = new PrismaBetterSqlite3({
 const prisma = new PrismaClient({ adapter })
 
 async function main() {
-  // Чистим таблицы перед заполнением, чтобы сид можно было запускать повторно
+  // Чистим таблицы перед заполнением, чтобы запускать повторно
   await prisma.dialogue.deleteMany()
   await prisma.item.deleteMany()
   await prisma.room.deleteMany()
   await prisma.character.deleteMany()
 
-  // СПАЛЬНЯ — полный набор предметов из второй версии
+  // СПАЛЬНЯ
   await prisma.room.create({
     data: {
       name: "Спальня",
@@ -38,28 +38,29 @@ async function main() {
     }
   })
 
-  // КОРИДОР (использует файл corridor.jpg)
+  // КОРИДОР
   await prisma.room.create({ 
     data: { 
       name: "Коридор", 
       description: "Коридор.", 
-      image: "/images/corridor.jpg", // <--- ТУТ КОРИДОР
+      image: "/images/corridor.jpg", // <--- ТУТ КОРИДОР (ОЧЕНЬ МУЧАЛАСЬ С КАРТИНКАМИ(Я НЕ УМЕЮ ПИСАТЬ))
       items: { 
         create: [{ name: "Картина", descriptions: "> Шпиндель: Абстракция? Кубизм? Постмодернизм??|> Шпиндель: или я просто смотрю на жабий утёс?" }] 
       } 
     } 
   })
   
-  // ЛЕСТНИЦА (использует файл stairs.jpg)
+  // ЛЕСТНИЦА
   await prisma.room.create({ 
     data: { 
       name: "Лестница", 
       description: "Лестница.", 
-      image: "/images/stairs.jpg", // <--- ТУТ ЛЕСТНИЦА
+      image: "/images/stairs.jpg", // <--- ТУТ ЛЕСТНИЦА (😭😭)
       items: { create: [] } 
     } 
   })
   
+  //КУХня
   await prisma.room.create({ 
     data: { 
       name: "Кухня", 
@@ -69,6 +70,7 @@ async function main() {
     } 
   })
   
+  //ТУАЛЕТ
   await prisma.room.create({ 
     data: { 
       name: "Туалет", 
@@ -78,6 +80,7 @@ async function main() {
     } 
   })
   
+  //ВАННАЯ
   await prisma.room.create({ 
     data: { 
       name: "Ванная", 
@@ -92,7 +95,7 @@ async function main() {
     data: [{ trigger: "start", text: "> Шпиндель: А вот и моя комната." }]
   })
 
-  // Персонаж — нужен компоненту для подстановки имени вместо «Шпиндель»
+  // Персонаж подставк имени. запарно((((
   await prisma.character.create({ data: { name: "Шпиндель" } })
 
   console.log("База обновлена! Спальня — полный набор предметов, персонаж создан.")
