@@ -8,7 +8,7 @@ import Image from "next/image";
 // ============================================================
 
 // Предмет: у каждого свой id, имя и набор реплик через разделитель "|"
-type Item = { id: number; name: string; descriptions: string };
+type Item = { id: number; name: string; descriptions: string; image: string };
 // Комната: id, название, описание, фоновая картинка и список предметов
 type Room = { id: number; name: string; description: string; image: string; items: Item[] };
 // Реплика диалога: срабатывает по триггеру (например "start")
@@ -52,6 +52,15 @@ const endImageSettings = {
   height: 250, // Высота в пикселях
   opacity: 100  // Прозрачность (в %)
 };
+// НАСТРОЙКИ КАРТИНКИ ПРЕДМЕТА НА СЦЕНЕ
+// x, y    — позиция центра картинки в процентах от сцены (50/50 = центр)
+// width   — ширина картинки в пикселях (высота подстроится пропорционально)
+const itemImageSettings = {
+  x: 50,
+  y: 50,
+  width: 150,
+};
+
 
 
 // Фразы, которые герой говорит при входе в комнату
@@ -356,6 +365,20 @@ export default function ComicGame({ rooms, dialogues, characterName }: { rooms: 
                 width={settings.width} 
                 height={settings.width * 2} 
                 style={{ width: `${settings.width}px`, height: 'auto', imageRendering: 'pixelated' }}
+              />
+           </div>
+         )}
+                  {/* Картинка выбранного предмета на сцене */}
+         {activeItem && activeItem.image && !isEscaping && (
+           <div className="absolute z-10 pointer-events-none"
+                style={{ left: "50%", top: "50%", transform: "translate(-50%, -50%)" }}>
+              <Image
+                src={activeItem.image}
+                alt={activeItem.name}
+                width={150}
+                height={150}
+                unoptimized
+                style={{ imageRendering: "pixelated" }}
               />
            </div>
          )}

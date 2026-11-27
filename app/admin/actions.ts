@@ -10,26 +10,14 @@ const adapter = new PrismaBetterSqlite3({
 })
 const prisma = new PrismaClient({ adapter })
 
-export async function createRoom(formData: FormData) {
-  const name = formData.get('name') as string
-  const description = formData.get('description') as string
-  const image = formData.get('image') as string
+// Заготовленные картинки: при создании предмету рандомно выдаётся одна из них
+const itemImages = [
+  "/images/shtyka1.png",
+  "/images/shtyka2.png",
+  "/images/shtyka3.png",
+];
 
-  if (!name || !description || !image) return
-
-  await prisma.room.create({
-    data: {
-      name,
-      description,
-      image,
-      items: { create: [] } // Комната создается пустой
-    }
-  })
-
-  // Обновляем кэш страницы админки, чтобы новая комната сразу появилась в списке
-  revalidatePath('/admin')
-}
-
+// Создание предмета через админку: имя, монологи через "|", комната
 export async function createItem(formData: FormData) {
   const name = formData.get('name') as string
   const descriptions = formData.get('descriptions') as string
@@ -41,9 +29,12 @@ export async function createItem(formData: FormData) {
     data: {
       name,
       descriptions, // Пишем через разделитель |
-      roomId
+      roomId,
+      image: itemImages[Math.floor(Math.random() * itemImages.length)], // рандом закрепляется навсегда
     }
   })
 
+  // Сбрасываем кэш, чтобы игра и админка перечитали базу
+  revalidatePath('/')
   revalidatePath('/admin')
 }
