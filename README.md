@@ -1,57 +1,72 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+## "Интерактивный Веб-комикс "Gardenout" " (Homestuck-style)
 
-## Getting Started
+Интерактивный веб-комикс с исследованием комнат, сбором предметов и монологами главного героя. Проект выполнен в рамках учебной практики УП.01.
 
-First, run the development server:
+## Описание проекта
+Приложение представляет собой интерактивную игру-квест в стиле комикса, по мотивам Homestuck. Игрок перемещается между локациями (спальня, коридор, кухня, ванная, туалет, лестница), взаимодействует с предметами и читает монологи персонажа. 
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+Особенности проекта:
+  Имитация классических механик веб-комиксов (экран ввода имени с отказом в регистрации).
+  Управление персонажем с помощью клавиатуры (WASD).
+  Листание вариативных монологов на клавишу E.
+  Анимированная концовка.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+##  Технологический стек
+  Фреймворк: Next.js 16 (App Router)
+  Язык: TypeScript
+  Стили: Tailwind CSS
+  База данных: SQLite
+  ORM: Prisma
+  Дополнительно: better-sqlite3 (адаптер для работы Prisma 7 с SQLite)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+##Структура базы данных (Prisma)
+  Room — комнаты (локации), по которым перемещается герой.
+  Item — предметы в комнатах. Содержат массив текстов (монологов), разделенных символом |. 
+  Dialogue — стартовые реплики персонажа.
+  Character — информация о персонаже.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+##Инструкция по локальному запуску
+Для запуска проекта на компьютере должны быть установлены Node.js (версия 20+) и Git.
 
-## Learn More
+1. Клонируйте репозиторий и перейдите в папку проекта:
+  
+   git clone https://github.com/bbxddddddd/gardenout.git
 
-To learn more about Next.js, take a look at the following resources:
+   cd gardenout
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+2. Переключитесь на ветку сдачи работы (develop):
+  
+   git checkout develop
+ 
+3. Установите зависимости (флаг --ignore-scripts предотвращает ошибки сборки нативных модулей на некоторых ОС):
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
-
-# Веб-комикс "Шпиндель" (Homestuck-style)
-
-Интерактивный веб-комикс с исследованием комнат, сбором предметов и монолгами главного героя (Бориса Шпинделя).
-
-## Технологический стек
-*   **Фреймворк:** Next.js (App Router)
-*   **Язык:** TypeScript
-*   **Стили:** Tailwind CSS
-*   **База данных:** SQLite
-*   **ORM:** Prisma
-
-## Ключевые сущности
-*   **Room (Комната):** Локации, по которым перемещается герой.
-*   **Item (Предмет):** Объекты в комнатах (очки, ноутбук, унитаз и т.д.). Содержат вариации текстов.
-*   **Dialogue (Диалог):** Стартовые реплики персонажа.
-
-## Инструкция по запуску
-1. Установите зависимости:
-   ```bash
    npm install --ignore-scripts
+
+4. Сгенерируйте клиент Prisma:
+  
+   npx prisma generate
+
+5. Примените миграции для создания структуры базы данных:
+  
+   npx prisma migrate dev
+
+6. Заполните базу данных тестовыми текстами и комнатами:
+  
+   npm run db:seed
+
+7. Запустите сервер разработки:
+  
+   npm run dev
+
+8. Откройте приложение в браузере по адресу: http://localhost:3000
+
+(Примечание: если при запуске возникают ошибки, связанные с Turbopack, используйте команду npx next dev --webpack).
+ 
+##Основные артефакты
+
+•prisma/schema.prisma — описание моделей БД.
+•prisma/migrations/ — история миграций.
+•prisma/seed.ts — скрипт первичного заполнения базы.
+•prisma/dev.db — файл базы данных SQLite с тестовыми данными.
+•public/images/ — спрайты персонажа, фоны комнат и кадры анимации.
